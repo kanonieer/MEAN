@@ -1,0 +1,12 @@
+server/node_modules
+server/dataDB/journal
+client/node_modules
+client/e2e/**/*.js.map
+client/e2e/**/*.js
+client/_test-output
+client/_temp
+client/*.js.map
+client/app/**/*.js
+client/link-checker-results.txt
+client/npm-debug.*
+client/jspm_package

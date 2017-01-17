@@ -1,0 +1,83 @@
+<div class="home-container">
+    <div class="box-container">
+        <div class="title">Zamówienie</div>
+        <div class="decorator">
+            <form #f="ngForm" (ngSubmit)="submitForm(f.form.value)">
+                <label for="firstName">Imię</label>
+                <input 
+                    id="firstName"
+                    ngModel 
+                    name="firstName" 
+                    #firstName="ngModel" 
+                    required
+                    pattern="[a-zA-ZłżźóćąęńŃĆŚŹŻĄĘÓŁ]+"
+                    minlength="3">
+                <div *ngIf="firstName.touched && firstName.errors">
+                    <div
+                        *ngIf="firstName.errors.required" 
+                        class="alert-danger">Imię jest wymagane.</div>
+                    <div
+                        *ngIf="firstName.errors.minlength"
+                        class="alert-danger">Minimalna długość to 3 znaki.</div>
+                    <div
+                        *ngIf="firstName.errors.pattern"
+                        class="alert-danger">Imię musi się składać tylko z liter.</div>                        
+                </div>
+                <label for="lastName">Nazwisko</label>
+                <input
+                     id="lastName"
+                     ngModel 
+                     name="lastName"  
+                     #lastName="ngModel" 
+                     required
+                     pattern="[a-zA-ZłżźóćąęńŃĆŚŹŻĄĘÓŁ]+"
+                     minlength="3">
+                <div *ngIf="lastName.touched && lastName.errors">
+                    <div
+                        *ngIf="lastName.errors.required" 
+                        class="alert-danger">Nazwisko jest wymagane.</div>
+                    <div
+                        *ngIf="lastName.errors.minlength"
+                        class="alert-danger">Minimalna długość to 3 znaki.</div>
+                    <div
+                        *ngIf="lastName.errors.pattern"
+                        class="alert-danger">Nazwisko musi się składać tylko z liter.</div>                        
+                </div>
+                <label for="phone" type="number">Telefon</label>
+                <input 
+                    id="lastName"
+                    ngModel 
+                    name="phone"  
+                    #phone="ngModel" 
+                    required
+                    pattern="[0-9]+"
+                    minlength="9">
+                <div *ngIf="phone.touched && phone.errors">
+                    <div
+                        *ngIf="phone.errors.required" 
+                        class="alert-danger">Telefon jest wymagany.</div>
+                    <div
+                        *ngIf="phone.errors.minlength"
+                        class="alert-danger">Minimalna długość to 9 znaków.</div>
+                    <div
+                        *ngIf="phone.errors.pattern"
+                        class="alert-danger">Telefon musi się składać tylko z cyfr.</div>                        
+                </div>    
+                <button class="btn" type="submit" [disabled]="!f.valid">Potwierdź</button>
+            </form>        
+        </div>
+    </div> 
+     <div class="box-container">
+        <div class="title">Koszyk</div>
+        <div class="decorator">
+        <ul>
+            <li class="display-row" *ngFor="let movie of this.cartService.cart">
+                <span>{{movie.name}}, {{movie.fee}}</span>
+            </li>
+        </ul>
+        <div class="summary">
+            <span>Podsumowanie: {{ totalCost() | number : '1.2-2' }} </span> 
+        </div>            
+        </div>
+     </div>
+</div>

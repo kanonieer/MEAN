@@ -1,0 +1,12 @@
+<ul>
+    <li class="display-row" *ngFor="let movie of cart">
+        <span>{{movie.name}}, {{movie.fee}}</span>
+        <span class="btn btn-remove" (click)="removeFromCart(movie)">usuń</span> 
+        {{ countTotalCost() }}
+    </li>
+</ul>
+<div class="summary">
+    <span>Podsumowanie: {{ totalCost | number : '1.2-2' }} </span> 
+    <span class="btn" routerLink="/order" routerLinkActive="totalCost>0">Zamów</span>
+
+</div>
