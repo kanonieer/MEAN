@@ -1,18 +1,18 @@
 {
-  "name": "uam-es6-project-server",
+  "name": "MEAN",
   "version": "0.1.0",
   "description": "",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Tadeusz Makuch <tadeusz.makuch@gft.com>",
+  "author": "Paweł Łukasik, Adam Kulczycki",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.15.2",
     "circular-json": "^0.3.1",
     "express": "^4.14.0",
-    "jade": "~1.11.0",
+    "kerberos": "0.0.22",
     "lodash": "^4.17.2",
     "mongodb": "~2.0.33"
   }

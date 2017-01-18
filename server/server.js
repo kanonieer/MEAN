@@ -14,7 +14,7 @@ app.use(function(req, res, next) {
 
 
 app.use(bodyParser.urlencoded({
-    extended: false
+    extended: true
 }));
 app.use(bodyParser.text());
 app.use(bodyParser.json());

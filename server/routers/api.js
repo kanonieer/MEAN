@@ -5,7 +5,6 @@ const router = require('express').Router(),
       JSON = require('circular-json'),
       assert = require('assert');
 
-      var ObjectId = require('mongodb').ObjectID;
 
 
 router.get('/about', (req, res) => {
@@ -23,99 +22,23 @@ router.get('/about', (req, res) => {
     });
 });
 
-router.post('/movies', function(req, res){
-    var MongoClient = mongodb.MongoClient;
-    var url = 'mongodb://localhost:27017/database';
-    MongoClient.connect(url, function(err, db){
-      if (err) {
-        console.log('Unable to connect to the Server:', err);
-      } else {
-        console.log('Connected to Server');
- 
-        var collection = db.collection('movies');
-        var movie = {name: req.body.name, categoryIds: req.body.categoryIds,
-          count: req.body.count, fee: req.body.fee};
- 
-        collection.insert([movie], function (err, result){
-          if (err) {
-            console.log(err);
-          } else {
-            console.log('Successful adding')
-            res.json(movie);
-          }
-          db.close();
-        });
-      }
-    });
-  });
+//////////DODAWANIE DO MOVIES////////////////
+router.post('/movies', (req, res) => storage.addMovie(req,res));
 
 //////////USUWANIE Z MOVIES////////////////
-
-router.delete('/movies/:_id', function(req,res){
-    var MongoClient = mongodb.MongoClient;
-    var url = 'mongodb://localhost:27017/database';
-    MongoClient.connect(url, function(err, db){
-      if (err) {
-        console.log('Unable to connect to the Server:', err);
-      } else {
-        console.log('Connected to Server');
- 
-        var collection = db.collection('movies');
-        var tmp_id = req.params._id;
-        var id = new ObjectId(tmp_id);
-        collection.remove({ _id: id}, function (err, result){
-          if (err) {
-            console.log(err);
-          } else {
-            console.log('Success deleting')
-            res.json(result);
-          }
-          db.close();
-        });
-      }
-    });
-});
+router.delete('/movies/:_id', (req,res) => storage.removeMovie(req,res));
 
 //////////WYBIERANIE POJEDYNCZE Z MOVIES////////////////
+router.get('/movies/:_id', (req,res) => storage.getMovieById(req,res));
 
-router.get('/movies/:_id', function(req,res){
-    var MongoClient = mongodb.MongoClient;
-    var url = 'mongodb://localhost:27017/database';
-    MongoClient.connect(url, function(err, db){
-      if (err) {
-        console.log('Unable to connect to the Server:', err);
-      } else {
-        console.log('Connected to Server');
- 
-        var collection = db.collection('movies');
-        var tmp_id = req.params._id;
-        var id = new ObjectId(tmp_id);
-        collection.findOne({ _id: id}, function (err, result){
-          if (err) {
-            console.log(err);
-          } else {
-            console.log('Success')
-            res.json(result);
-          }
-          db.close();
-        });
-      }
-    });
-});
-
-
-/*router.get('movies/:id', function (req, res) {
-   // First read existing users.
-   fs.readFile( __dirname + "/" + "users.json", 'utf8', function (err, data) {
-       users = JSON.parse( data );
-       var user = users["user" + req.params.id] 
-       console.log( user );
-       res.end( JSON.stringify(user));
-   });
-});*/
-
+//////////POBIERANIE WSZYSTKICH MOVIES////////////////
 router.get('/movies', (req, res) => {
    res.json(storage.getAllMovies());
+});
+
+////////////EDYCJA MOVIES //////////////////////////
+router.put('/movies/:_id', function(req,res){
+  
 });
 
 router.get('/movies/:category', (req, res) => {
