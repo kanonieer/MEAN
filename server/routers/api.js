@@ -37,9 +37,7 @@ router.get('/movies', (req, res) => {
 });
 
 ////////////EDYCJA MOVIES //////////////////////////
-router.put('/movies/:_id', function(req,res){
-  
-});
+router.put('/movies/:_id', (req,res) => storage.updateMovie(req,res));
 
 router.get('/movies/:category', (req, res) => {
     res.json(storage.getMoviesFrom(req.params.category))

@@ -25,21 +25,34 @@ module.exports = {
             console.log('Connected to Server');
     
             var collection = db.collection('movies');
-            var movie = {name: req.body.name, categoryIds: req.body.categoryIds,
+            movie = {name: req.body.name, categoryIds: req.body.categoryIds,
             count: req.body.count, fee: req.body.fee};
-    
-            collection.insert([movie], function (err, result){
-            if (err) {
-                console.log(err);
-            } else {
-                console.log('Successful adding')
-                res.json(movie);
+            if( req.body.name==undefined || req.body.categoryIds==undefined || req.body.count==undefined || req.body.fee==undefined )
+            { 
+                res.status(400); //// bad request' nie podobano jakis parametrow lub sa nieodpowiednie
+                res.json("Niepoprawne dane"); 
+                db.close();
             }
-            db.close();
-            });
+            else{
+                console.log("cokolwiek");
+                        collection.insert([movie], function (err, result){
+                        if (err) {
+                            console.log(err);
+                        } 
+                        else {
+                            //|| Number.isInteger(req.body.fee)==false
+                            console.log('Successful adding');
+                            res.status(201);                    ///status 201 'created'
+                            res.json(movie);
+                        }
+                        db.close();
+                        });
+            }
+            //db.close();
         }
         });
-      refresh();
+        movies=[];
+        refresh();
     },
     getMovieById: function (req,res){
         MongoClient.connect(url, function(err, db){
@@ -69,14 +82,14 @@ module.exports = {
             console.log('Unable to connect to the Server:', err);
         } else {
             console.log('Connected to Server');
-
             var collection = db.collection('movies');
             var tmp_id = req.params._id;
             var id = new ObjectId(tmp_id);
-            collection.remove({ _id: id}, function (err, result){
+            collection.findOneAndDelete({ _id: id}, function (err, result){
             if (err) {
                 console.log(err);
             } else {
+                if(result.value==null){res.status(204);}            ///// wyslanie statusu 204 'no content' tzn nie ma movie o takim ID
                 console.log('Success deleting')
                 res.json(result);
             }
@@ -84,7 +97,37 @@ module.exports = {
             });
         }
         });
+        movies=[];
         refresh();
+    },
+    updateMovie: function(req, res){
+        MongoClient.connect(url, function(err, db){
+        if (err) {
+            console.log('Unable to connect to the Server:', err);
+        } else {
+            console.log('Connected to Server');
+
+            var collection = db.collection('movies');
+            var tmp_id = req.params._id;
+            var id = new ObjectId(tmp_id);
+            collection.findOne({ _id: id}, function (err, result){
+            if (err) {
+                console.log(err);
+            } else {
+                console.log('Success Updating')
+                var update = { name : req.body.name, categoryIds : req.body.categoryIds, count: req.body.count, fee: req.body.fee  };
+                collection.updateOne({_id : id}, update, function(err){
+                    res.json(result); /// co to ma zwracac??? zmieniony film? wszystkie filmy?
+                    res.send()
+                });
+            }
+            db.close();
+            });
+        }
+        });
+        movies=[];
+        refresh();
+
     },
     getCategoriesDictionary: function() {
         return categories;
@@ -103,6 +146,7 @@ module.exports = {
         });
     }
 };
+
 
 function refresh(){
   MongoClient.connect(url, function (err, db) {
