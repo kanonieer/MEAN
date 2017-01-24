@@ -1,7 +1,8 @@
 const _ = require('lodash'),
       mongodb = require('mongodb'),
       JSON = require('circular-json'),
-      assert = require('assert');
+      assert = require('assert'),
+      revalidator = require('revalidator');
        
 var MongoClient = mongodb.MongoClient;
 var url = 'mongodb://localhost:27017/database';
@@ -27,20 +28,41 @@ module.exports = {
             var collection = db.collection('movies');
             movie = {name: req.body.name, categoryIds: req.body.categoryIds,
             count: req.body.count, fee: req.body.fee};
-            if( req.body.name==undefined || req.body.categoryIds==undefined || req.body.count==undefined || req.body.fee==undefined )
-            { 
-                res.status(400); //// bad request' nie podobano jakis parametrow lub sa nieodpowiednie
-                res.json("Niepoprawne dane"); 
+            console.log(isNumeric(req.body.fee));
+                        var error = (revalidator.validate(movie, {
+                            properties: {
+                            name: {
+                                description: 'Name of movie',
+                                type: 'string',
+                                required: true
+                            },
+                            categoryIds: {
+                                description: 'Name of categorys for movie',
+                                type: 'any'
+                            },
+                            count: {
+                                description: 'The number of copies of the film',
+                                type: 'number',
+                                required: true
+                            },
+                            fee: {
+                                description: 'The cost of rent one copy',
+                                type: 'number',
+                                required: true
+                            }
+                            }
+                        }));
+            if( error.valid==false )
+            {   
+                res.status(400).json({code: 400, message: "Bad Request", field: error.errors[0].property, details: error.errors[0].message});
                 db.close();
             }
             else{
-                console.log("cokolwiek");
                         collection.insert([movie], function (err, result){
                         if (err) {
                             console.log(err);
                         } 
                         else {
-                            //|| Number.isInteger(req.body.fee)==false
                             console.log('Successful adding');
                             res.status(201);                    ///status 201 'created'
                             res.json(movie);
@@ -48,7 +70,6 @@ module.exports = {
                         db.close();
                         });
             }
-            //db.close();
         }
         });
         movies=[];
@@ -63,18 +84,37 @@ module.exports = {
     
                 var collection = db.collection('movies');
                 var tmp_id = req.params._id;
-                var id = new ObjectId(tmp_id);           
-                collection.findOne({ _id: id}, function (err, result){
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        console.log('Success');
-                        res.json(result);
-                    }                      
+                console.log(tmp_id.length);
+                if(tmp_id.length!=24)
+                {
+                    console.log("blad getMovieById nie ma takiego id");
+                    res.status(400).json({code: 400, message: "Bad Request", details: "ID argument is incorect"});
                     db.close();
-                });
+                }
+                else
+                {
+                        var id = new ObjectId(tmp_id)
+                        collection.findOne({ _id: id}, function (err, result){
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                if(result==null)
+                                {
+                                    res.status(404).json({code: 404, message: "Not Found", details: "There is no Movie with this ID"});///// wyslanie statusu 400 'bad request' tzn nie ma movie o takim ID
+                                }
+                                else
+                                {
+                                    console.log('Success');
+                                    res.json(result);
+                                }
+                            }                      
+                            db.close();
+                        });
+                }
             }
-        });      
+        });
+        movies=[];
+        refresh();      
     },
     removeMovie: function (req,res){
         MongoClient.connect(url, function(err, db){
@@ -84,17 +124,32 @@ module.exports = {
             console.log('Connected to Server');
             var collection = db.collection('movies');
             var tmp_id = req.params._id;
-            var id = new ObjectId(tmp_id);
-            collection.findOneAndDelete({ _id: id}, function (err, result){
-            if (err) {
-                console.log(err);
-            } else {
-                if(result.value==null){res.status(204);}            ///// wyslanie statusu 204 'no content' tzn nie ma movie o takim ID
-                console.log('Success deleting')
-                res.json(result);
-            }
-            db.close();
-            });
+            if(tmp_id.length!=24)
+                {
+                    res.status(400).json({code: 400, message: "Bad Request", details: "ID argument is incorect"}); //// 204 'no content' tzn nie ma movie o takim ID
+                    db.close();
+                }
+                else
+                {
+                        var id = new ObjectId(tmp_id);
+                        collection.findOneAndDelete({ _id: id}, function (err, result){
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            if(result.value==null)
+                            {
+                                res.status(404).json({code: 404, message: "Not Found", details: "There is no Movie with this ID"});///// wyslanie statusu 400 'bad request' tzn nie ma movie o takim ID
+                            }
+                            else
+                            {
+                                console.log('Success deleting');
+                                res.status(204).json("udalo sie");
+                            }         
+
+                        }
+                        db.close();
+                        });
+                }
         }
         });
         movies=[];
@@ -110,19 +165,18 @@ module.exports = {
             var collection = db.collection('movies');
             var tmp_id = req.params._id;
             var id = new ObjectId(tmp_id);
-            collection.findOne({ _id: id}, function (err, result){
-            if (err) {
-                console.log(err);
-            } else {
-                console.log('Success Updating')
-                var update = { name : req.body.name, categoryIds : req.body.categoryIds, count: req.body.count, fee: req.body.fee  };
-                collection.updateOne({_id : id}, update, function(err){
-                    res.json(result); /// co to ma zwracac??? zmieniony film? wszystkie filmy?
-                    res.send()
-                });
-            }
-            db.close();
+            var update = { name : req.body.name, categoryIds : req.body.categoryIds, count: req.body.count, fee: req.body.fee  };
+            collection.findOneAndUpdate({_id : id}, update, function(err,result){
+                console.log(result);
+                if(result.value==null)
+                {
+                    res.status(400).json({code: 400, message: "Bad Request", details: "Nie ma filmu o takim ID"});///// wyslanie statusu 400 'bad request' tzn nie ma movie o takim ID
+                }     
+                res.json(update); /// zwrocil udany update
+                res.status(201) /// '201' Created udany zapis do bazy
             });
+
+            db.close();
         }
         });
         movies=[];
@@ -171,7 +225,9 @@ function refresh(){
 }
 
 
-
+function isNumeric(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}
 
 
 
