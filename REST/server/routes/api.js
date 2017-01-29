@@ -122,6 +122,47 @@ router.post('/movies', function(req, res) {
   });
 }); 
 
+// delete movie (DELETE http://localhost:8080/api/movies/:id)
+router.delete('/movies/:id', function(req, res) {
+  Movie.findOneAndRemove({ id: req.params.id }, function(err, movie) {
+    if (err) throw err;
+    
+    if(movie == null){
+      console.log('No movie found');
+      res.json({ message: 'No movie found' });
+    }else{
+      console.log('Movie deleted successfully');
+      res.json({ success: true });
+    }
+  });
+}); 
+
+// update movie (PUT http://localhost:8080/api/movies/:id)
+router.put('/movies/:id', function(req, res) {
+  Movie.findOne({ id: req.params.id }, function(err, movie) {
+    if (err) throw err;
+
+    if (req.body.name){
+      movie.name = req.body.name;
+    }
+    if (req.body.categoryIds){
+      movie.categoryIds = req.body.categoryIds;
+    }
+    if (req.body.count){
+      movie.count = req.body.count;
+    }
+    if (req.body.fee){
+      movie.fee = req.body.fee;
+    }
+    movie.save(function(err) {
+      if (err) throw err;
+
+      console.log('Movie successfully updated!');
+      res.json(movie);
+    });
+  });
+}); 
+
 //////////////////////
 /////// USERS ////////
 //////////////////////
@@ -131,6 +172,37 @@ router.get('/users', function(req, res) {
   User.find({}, function(err, users) {
     res.json(users);
   });
+});
+
+// create movie (POST http://localhost:8080/api/users)
+router.post('/users', function(req, res) {
+  var user = new User({ 
+    name: req.body.name,
+    password: req.body.password,
+    movies: [],
+    admin: false
+  });
+
+  user.save(function(err) {
+    if (err) throw err;
+
+    console.log('User created successfully');
+    res.json({ success: true });
+  });
+}); 
+
+//////////////////////
+/// MOVIE COMMANDS ///
+//////////////////////
+
+// borrow a movie (POST http://localhost:8080/api/movies-commands/:id)
+router.post('/movies-commands/:id', function(req, res){
+
+});
+
+// return movie (PUT http://localhost:8080/api/movies-commands/:id)
+router.put('/movies-commands/:id', function(req, res){
+  
 });
 
 // authenticate a user (POST http://localhost:8080/api/authenticate)
