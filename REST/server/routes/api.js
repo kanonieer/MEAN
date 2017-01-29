@@ -89,6 +89,38 @@ router.get('/setupMovies', function(req, res) {
 ////// MOVIES ////////
 //////////////////////
 
+/**
+ * @api {get} /movies Request all Movies
+ * @apiName GetMovies
+ * @apiGroup Movies
+ *
+ *
+ * @apiSuccess {Movie[]} movies  all movies.
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [
+ *        {
+ *          "name": "Dark Tower",
+ *          "categoryIds": ["adventure", "fantasy"],
+ *          "count": 1,
+ *          "fee": 8.99
+ *        },
+ *        {
+ *           "name": "Twilight",
+ *           "categoryIds": ["fantasy", "comedy"],
+ *           "count": 3,
+ *           "fee": 5.99
+ *        },
+ *        {
+ *          "name": "Star Trek",
+ *          "categoryIds": ["sciFi", "adventure"],
+ *          "count": 3,
+ *          "fee": 5.99
+ *        }
+ *     ]
+ *
+ */
 // all movies (GET http://localhost:8080/api/movies)
 router.get('/movies', function(req, res) {
   Movie.find({}, function(err, movies) {
@@ -96,15 +128,81 @@ router.get('/movies', function(req, res) {
   });
 }); 
 
+/**
+ * @api {get} /movies/:id Request Movie information
+ * @apiName GetMovie
+ * @apiGroup Movies
+ *
+ * @apiParam {Number} id Movie unique ID.
+ *
+ * @apiSuccess {String} name Name of the Movie.
+ * @apiSuccess {String[]} categoryIds  Category of the Movie.
+ * @apiSuccess {Number} count  Count of the Movie.
+ * @apiSuccess {Number} fee  Cost of the Movie.
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "name": "Star Trek",
+ *       "categoryIds": ["sciFi", "adventure"],
+ *       "count": 3,
+ *        "fee": 5.99
+ *     }
+ *
+ * @apiError MovieNotFound The id of the Movie was not found.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 404 Not Found
+ *     {
+ *       "code": 404,
+ *       "message": "Not Found",
+ *       "details": "There is no Movie with this ID"
+ *     }
+ */
 // movie by Id (GET http://localhost:8080/api/movies/:id)
 router.get('/movies/:id', function(req, res) {
   Movie.find({ id: req.params.id}, function(err, movie) {
     if (err) throw err;
-    if(movie.length<1)(res.status(404).json({code: 404, message: "Not Found", details: "There is no Movie with this ID"}));
+    if(movie.length<1){res.status(404).json({code: 404, message: "Not Found", details: "There is no Movie with this ID"})}
     else{res.json(movie)};
   });
 }); 
 
+/**
+ * @api {post} /movies Add Movie to database
+ * @apiName PostMovie
+ * @apiGroup Movies
+ *
+ * @apiParam {String} name Movie name.
+ * @apiParam {String[]} categoryIds Movie categorys.
+ * @apiParam {Number} count Count of the Movie.
+ * @apiParam {Number} fee Cost of the Movie.
+ * 
+ *
+ * @apiSuccess {String} name Name of the Movie.
+ * @apiSuccess {String[]} categoryIds  Categorys of the Movie.
+ * @apiSuccess {Number} count  Count of the Movie.
+ * @apiSuccess {Number} fee Cost of the Movie.
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 201 Created
+ *     {
+ *       "name": "Star Trek",
+ *       "categoryIds": ["sciFi", "adventure"],
+ *       "count": 3,
+ *        "fee": 5.99
+ *     }
+ *
+ * @apiError MissingParameters There are missing parameters.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Bad Request
+ *     {
+ *       "code": 400,
+ *       "message": "Bad Request",
+ *       "details": "There are missing parameters"
+ *     }
+ */
 // create movie (POST http://localhost:8080/api/movies)
 router.post('/movies', function(req, res) {
   var movie = new Movie({ 
@@ -127,6 +225,27 @@ router.post('/movies', function(req, res) {
         }
 }); 
 
+/**
+ * @api {delete} /movies/:id Delete Movie from database
+ * @apiName DeleteMovie
+ * @apiGroup Movies
+ *
+ * @apiParam {Number} id Movie unique ID.
+ *
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 204 No Content
+ *
+ * @apiError MovieNotFound The id of the Movie was not found.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 404 Not Found
+ *     {
+ *       "code": 404,
+ *       "message": "Not Found",
+ *       "details": "There is no Movie with this ID"
+ *     }
+ */
 // delete movie (DELETE http://localhost:8080/api/movies/:id)
 router.delete('/movies/:id', function(req, res) {
   Movie.findOneAndRemove({ id: req.params.id }, function(err, movie) {
@@ -142,29 +261,70 @@ router.delete('/movies/:id', function(req, res) {
   });
 }); 
 
-// update movie (PUT http://localhost:8080/api/movies/:id)
-router.put('/movies/:id', function(req, res) {
+/**
+ * @api {patch} /movies/:id Update Movie
+ * @apiName PatchMovie
+ * @apiGroup Movies
+ *
+ * @apiParam {String} name Movie name.
+ * @apiParam {String[]} categoryIds Movie categorys.
+ * @apiParam {Number} count Count of the Movie.
+ * @apiParam {Number} fee Cost of the Movie.
+ * 
+ *
+ * @apiSuccess {String} name Name of the Movie.
+ * @apiSuccess {String[]} categoryIds  Categorys of the Movie.
+ * @apiSuccess {Number} count  Count of the Movie.
+ * @apiSuccess {Number} fee Cost of the Movie.
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 201 Created
+ *     {
+ *       "name": "Star Trek",
+ *       "categoryIds": ["sciFi", "adventure"],
+ *       "count": 3,
+ *        "fee": 5.99
+ *     }
+ *
+ * @apiError MovieNotFound The id of the Movie was not found.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 404 Not Found
+ *     {
+ *       "code": 404,
+ *       "message": "Not Found",
+ *       "details": "There is no Movie with this ID"
+ *     }
+ */
+// update movie (PATCH http://localhost:8080/api/movies/:id)
+router.patch('/movies/:id', function(req, res) {
   Movie.findOne({ id: req.params.id }, function(err, movie) {
     if (err) throw err;
 
-    if (req.body.name){
-      movie.name = req.body.name;
+    if(movie == null){
+      console.log('No movie found');
+      res.status(404).json({code: 404, message: "Not Found", details: "There is no Movie with this ID"});
     }
-    if (req.body.categoryIds){
-      movie.categoryIds = req.body.categoryIds;
-    }
-    if (req.body.count){
-      movie.count = req.body.count;
-    }
-    if (req.body.fee){
-      movie.fee = req.body.fee;
-    }
-    movie.save(function(err) {
-      if (err) throw err;
+    else{
+      if (req.body.name){
+        movie.name = req.body.name;
+      }
+      if (req.body.categoryIds){
+        movie.categoryIds = req.body.categoryIds;
+      }
+      if (req.body.count){
+        movie.count = req.body.count;
+      }
+      if (req.body.fee){
+        movie.fee = req.body.fee;
+      }
+      movie.save(function(err) {
+        if (err) throw err;
 
-      console.log('Movie successfully updated!');
-      res.json(movie);
-    });
+        console.log('Movie successfully updated!');
+        res.status(200).json(movie);
+      });
+    }
   });
 }); 
 
@@ -172,6 +332,41 @@ router.put('/movies/:id', function(req, res) {
 /////// USERS ////////
 //////////////////////
 
+/**
+ * @api {get} /users Request all Users
+ * @apiName GetUsers
+ * @apiGroup Users
+ *
+ *
+ * @apiSuccess {User[]} users  all users.
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [
+      {
+        "_id": "588b76d1a74fa8355824189c",
+        "id": 2,
+        "name": "Adam Kulczycki",
+        "password": "password",
+        "admin": false,
+        "__v": 0,
+        "movies": []
+      },
+      {
+        "_id": "588b777a02753c1888b551a7",
+        "id": 3,
+        "name": "Daria Zadrożniak",
+        "password": "password",
+        "admin": false,
+        "__v": 2,
+        "movies": [
+          6,
+          3
+        ]
+      }
+    ]
+ *
+ */
 // all users (GET http://localhost:8080/api/users)
 router.get('/users', function(req, res) {
   User.find({}, function(err, users) {
@@ -179,6 +374,31 @@ router.get('/users', function(req, res) {
   });
 });
 
+/**
+ * @api {post} /movies Create User
+ * @apiName PostUsers
+ * @apiGroup Users
+ *
+ * @apiParam {String} name User name.
+ * @apiParam {String} password User's password.
+ * 
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 201 Created
+ *     {
+ *       "User created successfully"
+ *     }
+ *
+ * @apiError MissingParameters There are missing parameters.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Bad Request
+ *     {
+ *       "code": 400,
+ *       "message": "Bad Request",
+ *       "details": "There are missing parameters"
+ *     }
+ */
 // create user (POST http://localhost:8080/api/users)
 router.post('/users', function(req, res) {
   var user = new User({ 
@@ -197,7 +417,7 @@ router.post('/users', function(req, res) {
       if (err) throw err;
 
       console.log('User created successfully');
-      res.json({ success: true });
+      res.status(201).json("User created successfully");
     });
   }
 }); 

@@ -8,5 +8,14 @@
     "mongoose": "^4.7.8",
     "mongoose-auto-increment": "^5.0.1",
     "morgan": "^1.7.0"
+  },
+  "apidoc": { 
+	  "name": "Movie Rental",
+	  "version": "0.1.0",
+	  "description": "apiDoc Movie Rental",
+	  "apidoc": {
+		"title": "Custom apiDoc browser title",
+		"url" : "http://localhost:8081/api"
+	  }
   }
 }
