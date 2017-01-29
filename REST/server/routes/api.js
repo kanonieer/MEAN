@@ -100,8 +100,8 @@ router.get('/movies', function(req, res) {
 router.get('/movies/:id', function(req, res) {
   Movie.find({ id: req.params.id}, function(err, movie) {
     if (err) throw err;
-
-    res.json(movie);
+    if(movie.length<1)(res.status(404).json({code: 404, message: "Not Found", details: "There is no Movie with this ID"}));
+    else{res.json(movie)};
   });
 }); 
 
@@ -113,13 +113,18 @@ router.post('/movies', function(req, res) {
     count: req.body.count,
     fee: req.body.fee
   });
+    if( req.body.name===undefined |  req.body.categoryIds===undefined | req.body.count===undefined |  req.body.fee===undefined)
+      {   
+        res.status(400).json({code: 400, message: "Bad Request", details: "There are missing parameters"});
+      }
+    else{
+          movie.save(function(err) {
+            if (err) throw err;
 
-  movie.save(function(err) {
-    if (err) throw err;
-
-    console.log('Movie saved successfully');
-    res.json({ success: true });
-  });
+          console.log('Movie saved successfully');
+          res.status(201).json(movie);
+          });
+        }
 }); 
 
 // delete movie (DELETE http://localhost:8080/api/movies/:id)
@@ -129,10 +134,10 @@ router.delete('/movies/:id', function(req, res) {
     
     if(movie == null){
       console.log('No movie found');
-      res.json({ message: 'No movie found' });
+      res.status(404).json({code: 404, message: "Not Found", details: "There is no Movie with this ID"});
     }else{
       console.log('Movie deleted successfully');
-      res.json({ success: true });
+      res.status(204);
     }
   });
 }); 
@@ -174,7 +179,7 @@ router.get('/users', function(req, res) {
   });
 });
 
-// create movie (POST http://localhost:8080/api/users)
+// create user (POST http://localhost:8080/api/users)
 router.post('/users', function(req, res) {
   var user = new User({ 
     name: req.body.name,
@@ -182,13 +187,19 @@ router.post('/users', function(req, res) {
     movies: [],
     admin: false
   });
+  if( req.body.name===undefined |  req.body.password===undefined )
+    {   
+      res.status(400).json({code: 400, message: "Bad Request", details: "There are missing parameters"});
+    }
+  else
+  {
+    user.save(function(err) {
+      if (err) throw err;
 
-  user.save(function(err) {
-    if (err) throw err;
-
-    console.log('User created successfully');
-    res.json({ success: true });
-  });
+      console.log('User created successfully');
+      res.json({ success: true });
+    });
+  }
 }); 
 
 //////////////////////
