@@ -423,7 +423,7 @@ router.get('/users', function(req, res) {
 });
 
 // user by Id (GET http://localhost:8080/api/users/:id)
-router.get('/movies/:id', function(req, res) {
+router.get('/users/:id', function(req, res) {
   User.findOne({ id: req.params.id}, function(err, user) {
     if (err) throw err;
     if(user.length<1){res.status(404).json({code: 404, message: "Not Found", details: "There is no user with this ID"})}
