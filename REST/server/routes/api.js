@@ -14,46 +14,94 @@ app.set('superSecret', config.secret); // secret variable
 
 var connection = mongoose.connect(config.database); 
 
-router.get('/deleteMovies', function(req, res) {
-  Movie.remove({},function(err) {
+/**
+ * @api {post} /movies Create User
+ * @apiName PostUsers
+ * @apiGroup Users
+ *
+ * @apiParam {String} name User name.
+ * @apiParam {String} password User's password.
+ * 
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 201 Created
+ *     {
+ *       "User created successfully"
+ *     }
+ *
+ * @apiError MissingParameters There are missing parameters.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Bad Request
+ *     {
+ *       "code": 400,
+ *       "message": "Bad Request",
+ *       "details": "There are missing parameters"
+ *     }
+ */
+// create user (POST http://localhost:8080/api/users)
+router.post('/users', function(req, res) {
+  var user = new User({ 
+    name: req.body.name,
+    password: req.body.password,
+    movies: [],
+    admin: false
+  });
+  if( req.body.name===undefined |  req.body.password===undefined )
+    {   
+      res.status(400).json({code: 400, message: "Bad Request", details: "There are missing parameters"});
+    }
+  else
+  {
+    user.save(function(err) {
+      if (err) throw err;
+
+      console.log('User created successfully');
+      res.status(201).json("User created successfully");
+    });
+  }
+}); 
+
+// authenticate a user (POST http://localhost:8080/api/authentication)
+router.post('/authentication', function(req, res) {
+
+  // find the user
+  User.findOne({
+    name: req.body.name
+  }, function(err, user) {
+
     if (err) throw err;
 
-    console.log('Movies deleted successfully');
-    res.json({ success: true });
-  });
-});
+    if (!user) {
+      res.json({ success: false, message: 'Authentication failed. User not found.' });
+    } else if (user) {
 
-router.get('/setupMovies', function(req, res) {
+      // check if password matches
+      if (user.password != req.body.password) {
+        res.json({ success: false, message: 'Authentication failed. Wrong password.' });
+      } else {
 
-  var movie1 = new Movie({ 
-    name: 'Dark Tower',
-    categoryIds: ["adventure", "fantasy"],
-    count: 1,
-    fee: 8.99
-  });
-  var movie2 = new Movie({ 
-    name: "Twilight",
-    categoryIds: ["fantasy", "comedy"],
-    count: 3,
-    fee: 5.99
-  });
-  var movie3 = new Movie({ 
-    name: "Star Trek",
-    categoryIds: ["sciFi", "adventure"],
-    count: 3,
-    fee: 5.99
-  });
+        // if user is found and password is right
+        // create a token
+        var token = jwt.sign(user, app.get('superSecret'), {
+          expiresIn: 24*60*60// expires in 24 hours
+        });
 
-  movie3.save(function(err) {
-    if (err) throw err;
+        // return the information including token as JSON
+        res.json({
+          success: true,
+          message: 'Enjoy your token!',
+          token: token
+        });
+      }   
 
-    console.log('Movie saved successfully');
-    res.json({ success: true });
+    }
+
   });
 });
 
 //wymagany token
-/*router.use(function(req, res, next) {
+router.use(function(req, res, next) {
 
   // check header or url parameters or post parameters for token
   var token = req.body.token || req.query.token || req.headers['x-access-token'];
@@ -83,7 +131,7 @@ router.get('/setupMovies', function(req, res) {
     
   }
 });
-*/
+
 
 //////////////////////
 ////// MOVIES ////////
@@ -374,104 +422,118 @@ router.get('/users', function(req, res) {
   });
 });
 
-/**
- * @api {post} /movies Create User
- * @apiName PostUsers
- * @apiGroup Users
- *
- * @apiParam {String} name User name.
- * @apiParam {String} password User's password.
- * 
- *
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 201 Created
- *     {
- *       "User created successfully"
- *     }
- *
- * @apiError MissingParameters There are missing parameters.
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 400 Bad Request
- *     {
- *       "code": 400,
- *       "message": "Bad Request",
- *       "details": "There are missing parameters"
- *     }
- */
-// create user (POST http://localhost:8080/api/users)
-router.post('/users', function(req, res) {
-  var user = new User({ 
-    name: req.body.name,
-    password: req.body.password,
-    movies: [],
-    admin: false
+// user by Id (GET http://localhost:8080/api/users/:id)
+router.get('/movies/:id', function(req, res) {
+  User.findOne({ id: req.params.id}, function(err, user) {
+    if (err) throw err;
+    if(user.length<1){res.status(404).json({code: 404, message: "Not Found", details: "There is no user with this ID"})}
+    else{res.json(user)};
   });
-  if( req.body.name===undefined |  req.body.password===undefined )
-    {   
-      res.status(400).json({code: 400, message: "Bad Request", details: "There are missing parameters"});
-    }
-  else
-  {
-    user.save(function(err) {
-      if (err) throw err;
-
-      console.log('User created successfully');
-      res.status(201).json("User created successfully");
-    });
-  }
 }); 
 
-//////////////////////
-/// MOVIE COMMANDS ///
-//////////////////////
-
-// borrow a movie (POST http://localhost:8080/api/movies-commands/:id)
-router.post('/movies-commands/:id', function(req, res){
-
-});
-
-// return movie (PUT http://localhost:8080/api/movies-commands/:id)
-router.put('/movies-commands/:id', function(req, res){
-  
-});
-
-// authenticate a user (POST http://localhost:8080/api/authenticate)
-router.post('/authenticate', function(req, res) {
-
-  // find the user
-  User.findOne({
-    name: req.body.name
-  }, function(err, user) {
-
+// borrow a movie (POST http://localhost:8080/api/users/:user_id/movies/:movie_id)
+router.post('/users/:user_id/movies/:movie_id', function(req, res){
+  User.findOne({id: req.params.user_id}, function(err, user) {
     if (err) throw err;
 
     if (!user) {
-      res.json({ success: false, message: 'Authentication failed. User not found.' });
-    } else if (user) {
+      res.json({ success: false, message: 'User not found.' });
+    }
+    if (user) {
+      if ( user.movies.indexOf(req.params.movie_id)>=0){
+        res.json({ success: false, message: 'User already borrowed that movie' })
+      } else{
+        Movie.findOne({id: req.params.movie_id},function(err, movie){
+          if(!movie){
+            res.json({ success: false, message: 'Movie not found.' });
+          }
+          if(movie){
+            if (movie.count < 1){
+              res.json({ success: false, message: 'Movie out of stock'});
+            }else{
+              user.movies.push(movie.id);
+              user.save(function(err) {
+                if (err) throw err;
 
-      // check if password matches
-      if (user.password != req.body.password) {
-        res.json({ success: false, message: 'Authentication failed. Wrong password.' });
-      } else {
+                console.log('User movies successfully updated!');
+              });
+              movie.count = movie.count - 1;
+              movie.save(function(err) {
+                if (err) throw err;
 
-        // if user is found and password is right
-        // create a token
-        var token = jwt.sign(user, app.get('superSecret'), {
-          expiresIn: 24*60*60// expires in 24 hours
+                console.log('Movie count successfully updated!');
+              });  
+              res.json({ success: true, message: 'Movie successfully borrowed'});              
+            }
+          }
         });
-
-        // return the information including token as JSON
-        res.json({
-          success: true,
-          message: 'Enjoy your token!',
-          token: token
-        });
-      }   
-
+      }
     }
 
   });
 });
+
+// return movie (PATCH http://localhost:8080/api/users/:user_id/movies/:movie_id)
+router.patch('/users/:user_id/movies/:movie_id', function(req, res){
+  User.findOne({id: req.params.user_id}, function(err, user) {
+    if (err) throw err;
+
+    if (!user) {
+      res.json({ success: false, message: 'User not found.' });
+    }
+    if (user) {
+      if ( user.movies.indexOf(req.params.movie_id)<0){
+        res.json({ success: false, message: 'User does not borrowed this movie' })
+      } else{
+        Movie.findOne({id: req.params.movie_id},function(err, movie){
+          if(!movie){
+            res.json({ success: false, message: 'Movie no longer in database.' });
+          }
+          if(movie){
+            user.movies.splice(user.movies.indexOf(movie.id),1);
+            user.save(function(err) {
+              if (err) throw err;
+
+              console.log('Movie successfully returned!');
+            });
+            movie.count = movie.count + 1;
+            movie.save(function(err) {
+              if (err) throw err;
+
+              console.log('Movie count successfully updated!');
+            });  
+            res.json({ success: true, message: 'Movie successfully returned'});                          
+          }
+        });
+      }
+    }
+  });    
+});
+
+// update user (PATCH http://localhost:8080/api/users/:id)
+router.patch('/users/:id', function(req, res) {
+  User.findOne({ id: req.params.id }, function(err, user) {
+    if (err) throw err;
+
+    if(user == null){
+      console.log('User not found');
+      res.status(404).json({code: 404, message: "Not Found", details: "There is no user with this ID"});
+    }
+    else{
+      if (req.body.name){
+        user.name = req.body.name;
+      }
+      if (req.body.password){
+        user.password = req.body.password;
+      }
+      user.save(function(err) {
+        if (err) throw err;
+
+        console.log('User successfully updated!');
+        res.status(200).json(user);
+      });
+    }
+  });
+}); 
 
 module.exports = router;  
