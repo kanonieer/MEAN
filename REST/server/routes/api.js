@@ -15,7 +15,7 @@ app.set('superSecret', config.secret); // secret variable
 var connection = mongoose.connect(config.database); 
 
 /**
- * @api {post} /movies Create User
+ * @api {post} /users Create User
  * @apiName PostUsers
  * @apiGroup Users
  *
@@ -62,6 +62,43 @@ router.post('/users', function(req, res) {
   }
 }); 
 
+/**
+ * @api {post} /authentication authenticate User
+ * @apiName PostAuthentication
+ * @apiGroup Authentication
+ *
+ * @apiParam {String} name User name.
+ * @apiParam {String} password User's password.
+ * 
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 Ok
+ *     {
+ *       "succes": true,
+ *       "message": "Enjoy your token!",
+ *       "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyIkX18iOnsic3RyaWN0TW9kZSI6dHJ1ZSwiZ2V0dGVycyI6e30sIndhc1BvcHVsYXRlZCI6ZmFsc2UsImFjdGl2ZVBhdGhzIjp7InBhdGhzIjp7Im1vdmllcyI6ImluaXQiLCJfX3YiOiJpbml0IiwiYWRtaW4iOiJpbml0IiwicGFzc3dvcmQiOiJpbml0IiwibmFtZSI6ImluaXQiLCJpZCI6ImluaXQiLCJfaWQiOiJpbml0In0sInN0YXRlcyI6eyJpZ25vcmUiOnt9LCJkZWZhdWx0Ijp7fSwiaW5pdCI6eyJfX3YiOnRydWUsIm1vdmllcyI6dHJ1ZSwiYWRtaW4iOnRydWUsInBhc3N3b3JkIjp0cnVlLCJuYW1lIjp0cnVlLCJpZCI6dHJ1ZSwiX2lkIjp0cnVlfSwibW9kaWZ5Ijp7fSwicmVxdWlyZSI6e319LCJzdGF0ZU5hbWVzIjpbInJlcXVpcmUiLCJtb2RpZnkiLCJpbml0IiwiZGVmYXVsdCIsImlnbm9yZSJdfSwiZW1pdHRlciI6eyJkb21haW4iOm51bGwsIl9ldmVudHMiOnt9LCJfZXZlbnRzQ291bnQiOjAsIl9tYXhMaXN0ZW5lcnMiOjB9fSwiaXNOZXciOmZhbHNlLCJfZG9jIjp7Im1vdmllcyI6W10sIl9fdiI6MCwiYWRtaW4iOmZhbHNlLCJwYXNzd29yZCI6InBhc3N3b3JkIiwibmFtZSI6IkFkYW0gS3VsY3p5Y2tpIiwiaWQiOjIsIl9pZCI6IjU4OGI3NmQxYTc0ZmE4MzU1ODI0MTg5YyJ9LCJfcHJlcyI6eyIkX19vcmlnaW5hbF9zYXZlIjpbbnVsbCxudWxsLG51bGxdLCIkX19vcmlnaW5hbF92YWxpZGF0ZSI6W251bGxdLCIkX19vcmlnaW5hbF9yZW1vdmUiOltudWxsXX0sIl9wb3N0cyI6eyIkX19vcmlnaW5hbF9zYXZlIjpbXSwiJF9fb3JpZ2luYWxfdmFsaWRhdGUiOltdLCIkX19vcmlnaW5hbF9yZW1vdmUiOltdfSwiaWF0IjoxNDg1ODE2NzM5LCJleHAiOjE0ODU5MDMxMzl9.JA-QYeV8GhoT53-KerM4cdikz-SqucputtcpIndJBYs"
+ *     }
+ *
+ * @apiError UserNotFound There is no User with this name.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Bad Request
+ *     {
+ *       "code": 400,
+ *       "message": "Bad Request",
+ *       "details": "Authentication failed. User not found."
+ *     }
+ * 
+ * @apiError BadPassword Password is incorret.
+ * 
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *     {
+ *       "code": 401,
+ *       "message": "Unauthorized",
+ *       "details": "Authentication failed. Wrong password."
+ *     }
+ */
 // authenticate a user (POST http://localhost:8080/api/authentication)
 router.post('/authentication', function(req, res) {
 
@@ -73,12 +110,12 @@ router.post('/authentication', function(req, res) {
     if (err) throw err;
 
     if (!user) {
-      res.json({ success: false, message: 'Authentication failed. User not found.' });
+      res.status(400).json({ code: 400, message: "Not Found",details: 'Authentication failed. User not found.' });
     } else if (user) {
 
       // check if password matches
       if (user.password != req.body.password) {
-        res.json({ success: false, message: 'Authentication failed. Wrong password.' });
+        res.status(404).json({ code: 401, message:"Unauthorized",details: 'Authentication failed. Wrong password.' });
       } else {
 
         // if user is found and password is right
@@ -88,7 +125,7 @@ router.post('/authentication', function(req, res) {
         });
 
         // return the information including token as JSON
-        res.json({
+        res.status(201).json({
           success: true,
           message: 'Enjoy your token!',
           token: token
@@ -149,6 +186,9 @@ router.use(function(req, res, next) {
  *     HTTP/1.1 200 OK
  *     [
  *        {
+ *          "_id": "58890a95df23361c64d6a713",
+            "id": 3,
+            "__v": 0,
  *          "name": "Dark Tower",
  *          "categoryIds": ["adventure", "fantasy"],
  *          "count": 1,
@@ -209,9 +249,9 @@ router.get('/movies', function(req, res) {
  */
 // movie by Id (GET http://localhost:8080/api/movies/:id)
 router.get('/movies/:id', function(req, res) {
-  Movie.find({ id: req.params.id}, function(err, movie) {
+  Movie.findOne({ id: req.params.id}, function(err, movie) {
     if (err) throw err;
-    if(movie.length<1){res.status(404).json({code: 404, message: "Not Found", details: "There is no Movie with this ID"})}
+    if(!movie){res.status(404).json({code: 404, message: "Not Found", details: "There is no Movie with this ID"})}
     else{res.json(movie)};
   });
 }); 
@@ -422,14 +462,109 @@ router.get('/users', function(req, res) {
   });
 });
 
+/**
+ * @api {get} /users/:id Request User information
+ * @apiName GetUser
+ * @apiGroup Users
+ *
+ * @apiParam {Number} id User unique ID.
+ *
+ * @apiSuccess {ObjectID} _id ID from MongoDB.
+ * @apiSuccess {Number} id  ID of the User.
+ * @apiSuccess {String} name  Name of the User.
+ * @apiSuccess {String} password  Paswword of the User.
+ * @apiSuccess {Boolean} admin  Check if Admin.
+ * @apiSuccess {Number} __v Versioning.
+ * @apiSuccess {Movie[]} movies List of the borrowed Movies.
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+        "_id": "588b76d1a74fa8355824189c",
+        "id": 2,
+        "name": "Adam Kulczycki",
+        "password": "password",
+        "admin": false,
+        "__v": 0,
+        "movies": []
+      }
+ *
+ * @apiError MovieNotFound The id of the User was not found.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 404 Not Found
+ *     {
+ *       "code": 404,
+ *       "message": "Not Found",
+ *       "details": "There is no User with this ID"
+ *     }
+ */
 // user by Id (GET http://localhost:8080/api/users/:id)
 router.get('/users/:id', function(req, res) {
   User.findOne({ id: req.params.id}, function(err, user) {
     if (err) throw err;
-    if(user.length<1){res.status(404).json({code: 404, message: "Not Found", details: "There is no user with this ID"})}
+    if(!user){res.status(404).json({code: 404, message: "Not Found", details: "There is no user with this ID"})}
     else{res.json(user)};
   });
 }); 
+
+
+/**
+ * @api {post} /users/:user_id/movies/:movie_id Borrow a Movie
+ * @apiName PostMovieToUser
+ * @apiGroup Users
+ *
+ * @apiParam {Number} user_id User ID.
+ * @apiParam {Number} movie_id Movie ID.
+ * 
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 201 Created
+ *     {
+ *       "succes":true,
+ *       "message":"Movie successfully borrowed"
+ *     }
+ *
+ * @apiError UserNotFound There is User with this ID.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 404 Not Found
+ *     {
+ *       "code": 404,
+ *       "message": "Not Found",
+ *       "details": "There is no User with this ID"
+ *     }
+ * 
+ * @apiError AlreadyBorrowerd User borrowed this Movie before.
+ * 
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 409 Conflict
+ *     {
+ *       "code": 409,
+ *       "message": "Conflict",
+ *       "details": "User already borrowed that movie"
+ *     }
+ * 
+ * @apiError MovieNotFound There is Movie with this ID.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 404 Not Found
+ *     {
+ *       "code": 404,
+ *       "message": "Not Found",
+ *       "details": "There is no Movie with this ID"
+ *     }
+ * 
+ * @apiError OutOfStock Quantity of this Movie is zero.
+ * 
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 409 Conflict
+ *     {
+ *       "code": 409,
+ *       "message": "Conflict",
+ *       "details": "Movie out of stock"
+ *     }
+ */
 
 // borrow a movie (POST http://localhost:8080/api/users/:user_id/movies/:movie_id)
 router.post('/users/:user_id/movies/:movie_id', function(req, res){
@@ -437,19 +572,19 @@ router.post('/users/:user_id/movies/:movie_id', function(req, res){
     if (err) throw err;
 
     if (!user) {
-      res.json({ success: false, message: 'User not found.' });
+      res.status(404).json({ code: 404, message:"Not Found", details: 'There is no User with this ID' });
     }
     if (user) {
       if ( user.movies.indexOf(req.params.movie_id)>=0){
-        res.json({ success: false, message: 'User already borrowed that movie' })
+        res.status(409).json({ code: 409, message: "Conflict", details: 'User already borrowed that movie' })
       } else{
         Movie.findOne({id: req.params.movie_id},function(err, movie){
           if(!movie){
-            res.json({ success: false, message: 'Movie not found.' });
+            res.status(404).json({ code: 404, message:"Not Found", details: 'There is no Movie with this ID' });
           }
           if(movie){
             if (movie.count < 1){
-              res.json({ success: false, message: 'Movie out of stock'});
+              res.status(409).json({ code:409, message: "Conflict", details: 'Movie out of stock'});
             }else{
               user.movies.push(movie.id);
               user.save(function(err) {
@@ -463,7 +598,7 @@ router.post('/users/:user_id/movies/:movie_id', function(req, res){
 
                 console.log('Movie count successfully updated!');
               });  
-              res.json({ success: true, message: 'Movie successfully borrowed'});              
+              res.status(201).json({ success: true, message: 'Movie successfully borrowed'});              
             }
           }
         });
@@ -473,21 +608,68 @@ router.post('/users/:user_id/movies/:movie_id', function(req, res){
   });
 });
 
+/**
+ * @api {patch} /users/:user_id/movies/:movie_id Update Borrowerd Movie
+ * @apiName PatchBorrowerdMovie
+ * @apiGroup Users
+ * 
+ * @apiParam {Number} user_id User ID.
+ * @apiParam {Number} movie_id Movie ID.
+ * 
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 201 Created
+ *     {
+ *       "success": true,
+ *       "message": "Movie successfully returned",
+ *     }
+ *
+ * @apiError UserNotFound There is User with this ID.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 404 Not Found
+ *     {
+ *       "code": 404,
+ *       "message": "Not Found",
+ *       "details": "There is no User with this ID"
+ *     }
+ * 
+ * @apiError NoBorrowerd User does not borrowed this movie.
+ * 
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 409 Conflict
+ *     {
+ *       "code": 409,
+ *       "message": "Conflict",
+ *       "details": "User does not borrowed this movie"
+ *     }
+ * 
+ * 
+ * @apiError NoMovie Movie no longer in database.
+ * 
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 409 Conflict
+ *     {
+ *       "code": 409,
+ *       "message": "Conflict",
+ *       "details": "Movie no longer in database"
+ *     }
+ */
 // return movie (PATCH http://localhost:8080/api/users/:user_id/movies/:movie_id)
 router.patch('/users/:user_id/movies/:movie_id', function(req, res){
   User.findOne({id: req.params.user_id}, function(err, user) {
     if (err) throw err;
 
     if (!user) {
-      res.json({ success: false, message: 'User not found.' });
+       res.status(404).json({ code: 404, message:"Not Found", details: 'There is no User with this ID' });
     }
     if (user) {
       if ( user.movies.indexOf(req.params.movie_id)<0){
-        res.json({ success: false, message: 'User does not borrowed this movie' })
+        res.status(409).json({ code:409, message: "Conflict", details: 'User does not borrowed this movie' })
       } else{
         Movie.findOne({id: req.params.movie_id},function(err, movie){
           if(!movie){
-            res.json({ success: false, message: 'Movie no longer in database.' });
+            res.status(409).json({ code:409, message: "Conflict", details: 'Movie no longer in database.' });
           }
           if(movie){
             user.movies.splice(user.movies.indexOf(movie.id),1);
@@ -502,7 +684,7 @@ router.patch('/users/:user_id/movies/:movie_id', function(req, res){
 
               console.log('Movie count successfully updated!');
             });  
-            res.json({ success: true, message: 'Movie successfully returned'});                          
+            res.status(201).json({ success: true, message: 'Movie successfully returned'});                          
           }
         });
       }
@@ -510,6 +692,46 @@ router.patch('/users/:user_id/movies/:movie_id', function(req, res){
   });    
 });
 
+/**
+ * @api {patch} /users/:id Update User
+ * @apiName PatchUser
+ * @apiGroup Users
+ *
+ * @apiParam {String} name User name.
+ * @apiParam {String} password User password.
+ * 
+ *
+ * @apiSuccess {ObjectID} _id ID from MongoDB.
+ * @apiSuccess {Number} id  ID of the User.
+ * @apiSuccess {String} name  Name of the User.
+ * @apiSuccess {String} password  Paswword of the User.
+ * @apiSuccess {Boolean} admin  Check if Admin.
+ * @apiSuccess {Number} __v Versioning.
+ * @apiSuccess {Movie[]} movies List of the borrowed Movies.
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+        "_id": "588b76d1a74fa8355824189c",
+        "id": 2,
+        "name": "Adam Kulczycki",
+        "password": "password",
+        "admin": false,
+        "__v": 0,
+        "movies": []
+      }
+ *
+ *
+ * @apiError UserNotFound The ID of the User was not found.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 404 Not Found
+ *     {
+ *       "code": 404,
+ *       "message": "Not Found",
+ *       "details": "There is no User with this ID"
+ *     }
+ */
 // update user (PATCH http://localhost:8080/api/users/:id)
 router.patch('/users/:id', function(req, res) {
   User.findOne({ id: req.params.id }, function(err, user) {
@@ -517,7 +739,7 @@ router.patch('/users/:id', function(req, res) {
 
     if(user == null){
       console.log('User not found');
-      res.status(404).json({code: 404, message: "Not Found", details: "There is no user with this ID"});
+      res.status(404).json({code: 404, message: "Not Found", details: "There is no User with this ID"});
     }
     else{
       if (req.body.name){
